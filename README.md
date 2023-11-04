@@ -29,10 +29,12 @@ Or if you do not want to litter your host system and user home directory with de
 
 ## nvidia
 Distrobox does not setup the nvidia vulkan host driver correctly:  
-`distrobox-create -i tumbleweed:latest --volume /etc/vulkan:/etc/vulkan --nvidia --name tharsis_dev --home ~/distrobox/home_develop --additional-packages "git opi cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel scout-command-not-found bash-completion"`
-Then:  
-`cd /usr/lib64`  
-`sudo ln -s ./libnvidia-vulkan-producer.so.xxx.xx.xx ./libnvidia-vulkan-producer.so`
+```
+distrobox-create -i tumbleweed:latest --volume /etc/vulkan:/etc/vulkan --nvidia --name tharsis_dev --home ~/distrobox/home_develop --additional-packages "git opi cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel scout-command-not-found bash-completion"
+distrobox-enter tharsis_dev
+cd /usr/lib64
+sudo ln -s ./libnvidia-vulkan-producer.so.xxx.xx.xx ./libnvidia-vulkan-producer.so
+```
 
 ## AMD / Intel
 `distrobox-create -i tumbleweed:latest --name tharsis_dev --home ~/distrobox/home_develop --additional-packages "git opi cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel scout-command-not-found bash-completion"`
