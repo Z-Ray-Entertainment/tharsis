@@ -43,6 +43,8 @@ fn main() {
 
     let event_loop = EventLoop::new();
     let surface = WindowBuilder::new()
+        .with_title("Tharsis")
+        //.with_fullscreen(Some(Fullscreen::Borderless(None)))
         .build_vk_surface(&event_loop, instance.clone())
         .unwrap();
 
@@ -121,9 +123,6 @@ fn main() {
         );
 
         let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
-        window.set_title("Tharsis");
-        let fullscreen = Some(Fullscreen::Borderless(None));
-        window.set_fullscreen(fullscreen);
         let image_extent: [u32; 2] = window.inner_size().into();
 
         Swapchain::new(
