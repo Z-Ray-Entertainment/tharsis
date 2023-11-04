@@ -21,10 +21,13 @@ use vulkano::descriptor_set::PersistentDescriptorSet;
 use vulkano::descriptor_set::WriteDescriptorSet;
 use vulkano::device::physical::PhysicalDeviceType;
 use vulkano::device::{Device, DeviceCreateInfo, DeviceExtensions, QueueCreateInfo};
+use vulkano::format::Format;
 use vulkano::image::view::ImageView;
+use vulkano::image::AttachmentImage;
 use vulkano::image::{ImageAccess, SwapchainImage};
 use vulkano::instance::{Instance, InstanceCreateInfo};
 use vulkano::memory::allocator::StandardMemoryAllocator;
+use vulkano::pipeline::graphics::depth_stencil::DepthStencilState;
 use vulkano::pipeline::graphics::input_assembly::InputAssemblyState;
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::graphics::viewport::{Viewport, ViewportState};
@@ -181,7 +184,7 @@ fn main() {
 
         let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
         let image_extent: [u32; 2] = window.inner_size().into();
-        
+
         let aspect_ratio = image_extent[0] as f32 / image_extent[1] as f32;
         mvp.projection = perspective(aspect_ratio, half_pi(), 0.01, 100.0);
 
@@ -257,19 +260,24 @@ fn main() {
     let uniform_buffer: CpuBufferPool<vs::ty::MVP_Data> =
         CpuBufferPool::uniform_buffer(memory_allocator.clone());
 
-    let render_pass = vulkano::single_pass_renderpass!(
-        device.clone(),
+    let render_pass = vulkano::single_pass_renderpass!(device.clone(),
         attachments: {
             color: {
                 load: Clear,
                 store: Store,
                 format: swapchain.image_format(),
                 samples: 1,
+            },
+            depth: {
+                load: Clear,
+                store: DontCare,
+                format: Format::D16_UNORM,
+                samples: 1,
             }
         },
         pass: {
             color: [color],
-            depth_stencil: {}
+            depth_stencil: {depth}
         }
     )
     .unwrap();
@@ -280,6 +288,7 @@ fn main() {
         .input_assembly_state(InputAssemblyState::new())
         .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
         .fragment_shader(fs.entry_point("main").unwrap(), ())
+        .depth_stencil_state(DepthStencilState::simple_depth_test())
         .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
         .build(device.clone())
         .unwrap();
@@ -330,7 +339,12 @@ fn main() {
         depth_range: 0.0..1.0,
     };
 
-    let mut framebuffers = window_size_dependent_setup(&images, render_pass.clone(), &mut viewport);
+    let mut framebuffers = window_size_dependent_setup(
+        &memory_allocator,
+        &images,
+        render_pass.clone(),
+        &mut viewport,
+    );
 
     let mut recreate_swapchain = false;
 
@@ -375,8 +389,12 @@ fn main() {
                 };
 
                 swapchain = new_swapchain;
-                framebuffers =
-                    window_size_dependent_setup(&new_images, render_pass.clone(), &mut viewport);
+                framebuffers = window_size_dependent_setup(
+                    &memory_allocator,
+                    &new_images,
+                    render_pass.clone(),
+                    &mut viewport,
+                );
                 recreate_swapchain = false;
             }
 
@@ -394,7 +412,7 @@ fn main() {
                 recreate_swapchain = true;
             }
 
-            let clear_values = vec![Some([0.25, 0.25, 0.25, 1.0].into())];
+            let clear_values = vec![Some([0.25, 0.25, 0.25, 1.0].into()), Some(1.0.into())];
 
             let uniform_subbuffer = {
                 let elapsed = rotation_start.elapsed().as_secs() as f64
@@ -490,12 +508,17 @@ fn main() {
 /// This method is called once during initialization, then again whenever the window is resized
 /// stolen from the vulkano example
 fn window_size_dependent_setup(
+    allocator: &StandardMemoryAllocator,
     images: &[Arc<SwapchainImage>],
     render_pass: Arc<RenderPass>,
     viewport: &mut Viewport,
 ) -> Vec<Arc<Framebuffer>> {
     let dimensions = images[0].dimensions().width_height();
     viewport.dimensions = [dimensions[0] as f32, dimensions[1] as f32];
+    let depth_buffer = ImageView::new_default(
+        AttachmentImage::transient(allocator, dimensions, Format::D16_UNORM).unwrap(),
+    )
+    .unwrap();
 
     images
         .iter()
@@ -504,7 +527,7 @@ fn window_size_dependent_setup(
             Framebuffer::new(
                 render_pass.clone(),
                 FramebufferCreateInfo {
-                    attachments: vec![view],
+                    attachments: vec![view, depth_buffer.clone()],
                     ..Default::default()
                 },
             )
