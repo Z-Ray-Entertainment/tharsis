@@ -1,6 +1,7 @@
 pub mod primitives;
 pub mod shaders;
 
+use nalgebra_glm::TMat4;
 use nalgebra_glm::half_pi;
 use nalgebra_glm::identity;
 use nalgebra_glm::look_at;
@@ -314,12 +315,23 @@ fn main() {
             let uniform_subbuffer = {
                 let elapsed = rotation_start.elapsed().as_secs() as f64
                     + rotation_start.elapsed().subsec_nanos() as f64 / 1_000_000_000.0;
-                let elapsed_as_radians = elapsed * pi::<f64>() / 180.0 * 30.0;
-                let model = rotate_normalized_axis(
-                    &mvp.model,
-                    elapsed_as_radians as f32,
+                let elapsed_as_radians = elapsed * pi::<f64>() / 180.0;
+                let mut model: TMat4<f32> = rotate_normalized_axis(
+                    &identity(),
+                    elapsed_as_radians as f32 * 50.0,
                     &vec3(0.0, 0.0, 1.0),
                 );
+                model = rotate_normalized_axis(
+                    &model,
+                    elapsed_as_radians as f32 * 30.0,
+                    &vec3(0.0, 1.0, 0.0),
+                );
+                model = rotate_normalized_axis(
+                    &model,
+                    elapsed_as_radians as f32 * 20.0,
+                    &vec3(1.0, 0.0, 0.0),
+                );
+                model = mvp.model * model;
 
                 let uniform_data = vertex_shader::ty::MvpData {
                     model: model.into(),
