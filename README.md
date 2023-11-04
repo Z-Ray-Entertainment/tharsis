@@ -1,2 +1,9 @@
-# tharsis
-A Vulkan and Rust based controller friendly desktop environment for GNU/Linux. It's planed to run as a standalone application atop gamescope.
+# Tharsis
+A Vulkan and Rust based controller UI for GNU/Linux.  
+It's planed to run as a standalone application atop gamescope to provide a more general controller interface as like
+the Steam Deck UI which is tailored towards Steam.  
+
+This is primarily a resaerch project to explore possibilities to mimik a more general purpose controller friendly user interaface. 
+This is **not** a full featured desktop environment or window manager and not planed to be one and also no wayland compositor. This is what gamescope already provides and will be used too.  
+
+By keepin any window managing out of this project it should also be able to run outside of a gamescope session.
