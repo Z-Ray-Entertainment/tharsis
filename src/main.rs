@@ -1,15 +1,15 @@
-use bytemuck::{Pod, Zeroable};
+pub mod primitives;
 
 use nalgebra_glm::half_pi;
 use nalgebra_glm::identity;
 use nalgebra_glm::TMat4;
-
 use nalgebra_glm::look_at;
 use nalgebra_glm::perspective;
 use nalgebra_glm::pi;
 use nalgebra_glm::rotate_normalized_axis;
 use nalgebra_glm::translate;
 use nalgebra_glm::vec3;
+
 use vulkano::buffer::CpuBufferPool;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess};
 use vulkano::command_buffer::allocator::StandardCommandBufferAllocator;
@@ -48,13 +48,7 @@ use winit::window::{Window, WindowBuilder};
 use std::sync::Arc;
 use std::time::Instant;
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Zeroable, Pod)]
-struct Vertex {
-    position: [f32; 3], //Use the same name in the vertex shader
-    color: [f32; 3],    //Use the same name in the vertex shader
-}
-vulkano::impl_vertex!(Vertex, position, color);
+use crate::primitives::primitives::Vertex;
 
 #[derive(Debug, Clone)]
 struct MVP {
