@@ -10,6 +10,9 @@ By keepin any window managing out of this project it should also be able to run 
 
 [![Rust](https://github.com/Z-Ray-Entertainment/tharsis/actions/workflows/rust.yml/badge.svg)](https://github.com/Z-Ray-Entertainment/tharsis/actions/workflows/rust.yml)
 
+## Concept
+![preview](assets/layouts/main_preview.svg)
+
 ## Requirements
 - rustup
 - gcc-c++
