@@ -1,10 +1,24 @@
 use bytemuck::{Pod, Zeroable};
 
+use nalgebra_glm::half_pi;
+use nalgebra_glm::identity;
+use nalgebra_glm::TMat4;
+
+use nalgebra_glm::look_at;
+use nalgebra_glm::perspective;
+use nalgebra_glm::pi;
+use nalgebra_glm::rotate_normalized_axis;
+use nalgebra_glm::translate;
+use nalgebra_glm::vec3;
+use vulkano::buffer::CpuBufferPool;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess};
 use vulkano::command_buffer::allocator::StandardCommandBufferAllocator;
 use vulkano::command_buffer::{
     AutoCommandBufferBuilder, CommandBufferUsage, RenderPassBeginInfo, SubpassContents,
 };
+use vulkano::descriptor_set::allocator::StandardDescriptorSetAllocator;
+use vulkano::descriptor_set::PersistentDescriptorSet;
+use vulkano::descriptor_set::WriteDescriptorSet;
 use vulkano::device::physical::PhysicalDeviceType;
 use vulkano::device::{Device, DeviceCreateInfo, DeviceExtensions, QueueCreateInfo};
 use vulkano::image::view::ImageView;
@@ -15,6 +29,8 @@ use vulkano::pipeline::graphics::input_assembly::InputAssemblyState;
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::graphics::viewport::{Viewport, ViewportState};
 use vulkano::pipeline::GraphicsPipeline;
+use vulkano::pipeline::Pipeline;
+use vulkano::pipeline::PipelineBindPoint;
 use vulkano::render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass};
 use vulkano::swapchain::{
     self, AcquireError, Swapchain, SwapchainCreateInfo, SwapchainCreationError,
@@ -30,16 +46,42 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
 
 use std::sync::Arc;
+use std::time::Instant;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, Zeroable, Pod)]
 struct Vertex {
     position: [f32; 3], //Use the same name in the vertex shader
-    color: [f32; 3], //Use the same name in the vertex shader
+    color: [f32; 3],    //Use the same name in the vertex shader
 }
 vulkano::impl_vertex!(Vertex, position, color);
 
+#[derive(Debug, Clone)]
+struct MVP {
+    model: TMat4<f32>,
+    view: TMat4<f32>,
+    projection: TMat4<f32>,
+}
+
+impl MVP {
+    fn new() -> MVP {
+        MVP {
+            model: identity(),
+            view: identity(),
+            projection: identity(),
+        }
+    }
+}
+
 fn main() {
+    let mut mvp = MVP::new();
+    mvp.view = look_at(
+        &vec3(0.0, 0.0, 0.1),
+        &vec3(0.0, 0.0, 0.0),
+        &vec3(0.0, 1.0, 0.0),
+    );
+    mvp.model = translate(&identity(), &vec3(0.0, 0.0, -1.0));
+
     let instance = {
         let library = VulkanLibrary::new().unwrap();
         let extensions = vulkano_win::required_extensions(&library);
@@ -139,6 +181,9 @@ fn main() {
 
         let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
         let image_extent: [u32; 2] = window.inner_size().into();
+        
+        let aspect_ratio = image_extent[0] as f32 / image_extent[1] as f32;
+        mvp.projection = perspective(aspect_ratio, half_pi(), 0.01, 100.0);
 
         Swapchain::new(
             device.clone(),
@@ -158,6 +203,7 @@ fn main() {
     let command_buffer_allocator =
         StandardCommandBufferAllocator::new(device.clone(), Default::default());
     let memory_allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
+    let descriptor_set_allocator = StandardDescriptorSetAllocator::new(device.clone());
 
     mod vs {
         vulkano_shaders::shader! {
@@ -168,12 +214,24 @@ fn main() {
                 layout(location = 1) in vec3 color;
 
                 layout(location = 0) out vec3 out_color;
+
+                layout(set = 0, binding = 0) uniform MVP_Data {
+                    mat4 model;
+                    mat4 view;
+                    mat4 projection;
+                } uniforms;
     
                 void main() {
-                    gl_Position = vec4(position, 1.0);
+                    mat4 worldview = uniforms.view * uniforms.model;
+                    gl_Position = uniforms.projection * worldview * vec4(position, 1.0);
                     out_color = color;
                 }
-            "
+            ",
+            types_meta: {
+                use bytemuck::{Pod, Zeroable};
+
+                #[derive(Clone, Copy, Zeroable, Pod)]
+            },
         }
     }
 
@@ -195,6 +253,9 @@ fn main() {
 
     let vs = vs::load(device.clone()).unwrap();
     let fs = fs::load(device.clone()).unwrap();
+
+    let uniform_buffer: CpuBufferPool<vs::ty::MVP_Data> =
+        CpuBufferPool::uniform_buffer(memory_allocator.clone());
 
     let render_pass = vulkano::single_pass_renderpass!(
         device.clone(),
@@ -237,17 +298,16 @@ fn main() {
             position: [0.0, -0.5, 0.0],
             color: [0.0, 0.0, 1.0],
         },
-
         Vertex {
-            position: [0.5, 1.5, 0.0],
+            position: [0.5, 1.5, -1.0],
+            color: [1.0, 0.0, 0.0],
+        },
+        Vertex {
+            position: [1.5, 1.5, -1.0],
             color: [0.0, 1.0, 0.0],
         },
         Vertex {
-            position: [1.5, 1.5, 0.0],
-            color: [0.0, 1.0, 0.0],
-        },
-        Vertex {
-            position: [1.0, 0.5, 0.0],
+            position: [1.0, 0.5, -1.0],
             color: [0.0, 0.0, 1.0],
         },
     ];
@@ -276,6 +336,8 @@ fn main() {
 
     let mut previous_frame_end = Some(Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>);
 
+    let rotation_start = Instant::now();
+
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             event: WindowEvent::CloseRequested,
@@ -299,6 +361,9 @@ fn main() {
             if recreate_swapchain {
                 let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
                 let image_extent: [u32; 2] = window.inner_size().into();
+
+                let aspect_ratio = image_extent[0] as f32 / image_extent[1] as f32;
+                mvp.projection = perspective(aspect_ratio, half_pi(), 0.01, 100.0);
 
                 let (new_swapchain, new_images) = match swapchain.recreate(SwapchainCreateInfo {
                     image_extent,
@@ -331,6 +396,33 @@ fn main() {
 
             let clear_values = vec![Some([0.25, 0.25, 0.25, 1.0].into())];
 
+            let uniform_subbuffer = {
+                let elapsed = rotation_start.elapsed().as_secs() as f64
+                    + rotation_start.elapsed().subsec_nanos() as f64 / 1_000_000_000.0;
+                let elapsed_as_radians = elapsed * pi::<f64>() / 180.0 * 30.0;
+                let model = rotate_normalized_axis(
+                    &mvp.model,
+                    elapsed_as_radians as f32,
+                    &vec3(0.0, 0.0, 1.0),
+                );
+
+                let uniform_data = vs::ty::MVP_Data {
+                    model: model.into(),
+                    view: mvp.view.into(),
+                    projection: mvp.projection.into(),
+                };
+
+                uniform_buffer.from_data(uniform_data).unwrap()
+            };
+
+            let layout = pipeline.layout().set_layouts().get(0).unwrap();
+            let set = PersistentDescriptorSet::new(
+                &descriptor_set_allocator,
+                layout.clone(),
+                [WriteDescriptorSet::buffer(0, uniform_subbuffer)],
+            )
+            .unwrap();
+
             let mut cmd_buffer_builder = AutoCommandBufferBuilder::primary(
                 &command_buffer_allocator,
                 queue.queue_family_index(),
@@ -351,6 +443,12 @@ fn main() {
                 .unwrap()
                 .set_viewport(0, [viewport.clone()])
                 .bind_pipeline_graphics(pipeline.clone())
+                .bind_descriptor_sets(
+                    PipelineBindPoint::Graphics,
+                    pipeline.layout().clone(),
+                    0,
+                    set.clone(),
+                )
                 .bind_vertex_buffers(0, vertex_buffer.clone())
                 .draw(vertex_buffer.len() as u32, 1, 0, 0)
                 .unwrap()
