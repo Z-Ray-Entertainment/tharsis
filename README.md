@@ -8,6 +8,8 @@ This is **not** a full featured desktop environment, window manager or Wayland c
 
 By keepin any window managing out of this project it should also be able to run outside of a gamescope session.
 
+[![Rust](https://github.com/Z-Ray-Entertainment/tharsis/actions/workflows/rust.yml/badge.svg)](https://github.com/Z-Ray-Entertainment/tharsis/actions/workflows/rust.yml)
+
 ## Requirements
 - rustup
 - gcc-c++
