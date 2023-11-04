@@ -7,3 +7,15 @@ This is primarily a resaerch project to explore possibilities to mimik a more ge
 This is **not** a full featured desktop environment, window manager or Wayland compositor and not planed to be one. This is what gamescope already provides and will be used for.  
 
 By keepin any window managing out of this project it should also be able to run outside of a gamescope session.
+
+## Requirements
+- rustup
+- gcc-c++
+- ninja
+- CMake
+- vulkan-devel
+- vulkan-tools
+- fontconfig-devel
+
+### openSUSE
+'sudo zypper in cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel'

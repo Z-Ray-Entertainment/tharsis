@@ -1,0 +1,11 @@
+[package]
+name = "tharsis"
+version = "0.0.1"
+authors = ["Imo 'Vortex Acherontic' Hester <vortex@z-ray.de>"]
+edition = "2021"
+
+[dependencies]
+vulkano = "0.32.3"
+vulkano-shaders = "0.32.0"
+vulkano-win = "0.32.0"
+winit = "0.27.3"
