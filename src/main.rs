@@ -290,8 +290,9 @@ fn main() {
         .input_assembly_state(InputAssemblyState::new())
         .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
         .fragment_shader(fs.entry_point("main").unwrap(), ())
-        .depth_stencil_state(DepthStencilState::simple_depth_test())
-        .rasterization_state(RasterizationState::new().cull_mode(CullMode::Back))
+        //We don't need these two it's a 2D user interface, no 3D and no reason to cull any faces.
+        //.depth_stencil_state(DepthStencilState::simple_depth_test())
+        //.rasterization_state(RasterizationState::new().cull_mode(CullMode::Back))
         .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
         .build(device.clone())
         .unwrap();
