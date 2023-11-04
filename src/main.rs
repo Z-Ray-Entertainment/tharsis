@@ -3,7 +3,6 @@ pub mod shaders;
 
 use nalgebra_glm::half_pi;
 use nalgebra_glm::identity;
-use nalgebra_glm::TMat4;
 use nalgebra_glm::look_at;
 use nalgebra_glm::perspective;
 use nalgebra_glm::pi;
@@ -51,25 +50,9 @@ use std::time::Instant;
 
 use crate::primitives::primitives::Rectangle;
 use crate::primitives::primitives::Vertex;
+use crate::shaders::shaders::MVP;
 use crate::shaders::shaders::fragment_shader;
 use crate::shaders::shaders::vertex_shader;
-
-#[derive(Debug, Clone)]
-struct MVP {
-    model: TMat4<f32>,
-    view: TMat4<f32>,
-    projection: TMat4<f32>,
-}
-
-impl MVP {
-    fn new() -> MVP {
-        MVP {
-            model: identity(),
-            view: identity(),
-            projection: identity(),
-        }
-    }
-}
 
 fn main() {
     let mut mvp = MVP::new();
