@@ -48,6 +48,7 @@ use winit::window::{Window, WindowBuilder};
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::primitives::primitives::Rectangle;
 use crate::primitives::primitives::Vertex;
 
 #[derive(Debug, Clone)]
@@ -277,33 +278,7 @@ fn main() {
         .build(device.clone())
         .unwrap();
 
-    //Mesh data
-    let vertices = [
-        Vertex {
-            position: [-0.5, 0.5, 0.0],
-            color: [1.0, 0.0, 0.0],
-        },
-        Vertex {
-            position: [0.5, 0.5, 0.0],
-            color: [0.0, 1.0, 0.0],
-        },
-        Vertex {
-            position: [0.0, -0.5, 0.0],
-            color: [0.0, 0.0, 1.0],
-        },
-        Vertex {
-            position: [0.5, 1.5, -1.0],
-            color: [1.0, 0.0, 0.0],
-        },
-        Vertex {
-            position: [1.5, 1.5, -1.0],
-            color: [0.0, 1.0, 0.0],
-        },
-        Vertex {
-            position: [1.0, 0.5, -1.0],
-            color: [0.0, 0.0, 1.0],
-        },
-    ];
+    let rectangle = Rectangle::new();
 
     //Buffer with mesh data passed to the GPU to render
     let vertex_buffer = CpuAccessibleBuffer::from_iter(
@@ -313,7 +288,7 @@ fn main() {
             ..BufferUsage::empty()
         },
         false,
-        vertices,
+        rectangle.mesh,
     )
     .unwrap();
 
