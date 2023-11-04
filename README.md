@@ -22,3 +22,13 @@ By keepin any window managing out of this project it should also be able to run 
 
 ## Compile and run
 `cargo r`
+
+# Distrobox
+If you want to develop tharis on an mmutable distribution you may want to use a distrobox container.  
+Or if you do not want to litter your host system and user home directory with development files only required for developing tharis
+
+## nvidia
+`distrobox-create -i tumbleweed:latest --volume /etc/vulkan:/etc/vulkan --nvidia --name tharsis_dev --home ~/distrobox/home_develop --additional-packages "git opi cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel scout-command-not-found bash-completion"`
+
+## AMD / Intel
+`distrobox-create -i tumbleweed:latest --name tharsis_dev --home ~/distrobox/home_develop --additional-packages "git opi cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel scout-command-not-found bash-completion"`
