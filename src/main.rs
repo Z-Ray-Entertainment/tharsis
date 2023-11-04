@@ -1,4 +1,5 @@
 pub mod primitives;
+pub mod shaders;
 
 use nalgebra_glm::half_pi;
 use nalgebra_glm::identity;
@@ -50,6 +51,8 @@ use std::time::Instant;
 
 use crate::primitives::primitives::Rectangle;
 use crate::primitives::primitives::Vertex;
+use crate::shaders::shaders::fragment_shader;
+use crate::shaders::shaders::vertex_shader;
 
 #[derive(Debug, Clone)]
 struct MVP {
@@ -200,56 +203,10 @@ fn main() {
     let memory_allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
     let descriptor_set_allocator = StandardDescriptorSetAllocator::new(device.clone());
 
-    mod vs {
-        vulkano_shaders::shader! {
-            ty: "vertex",
-            src: "
-                #version 450
-                layout(location = 0) in vec3 position;
-                layout(location = 1) in vec3 color;
+    let vs = vertex_shader::load(device.clone()).unwrap();
+    let fs = fragment_shader::load(device.clone()).unwrap();
 
-                layout(location = 0) out vec3 out_color;
-
-                layout(set = 0, binding = 0) uniform MVP_Data {
-                    mat4 model;
-                    mat4 view;
-                    mat4 projection;
-                } uniforms;
-    
-                void main() {
-                    mat4 worldview = uniforms.view * uniforms.model;
-                    gl_Position = uniforms.projection * worldview * vec4(position, 1.0);
-                    out_color = color;
-                }
-            ",
-            types_meta: {
-                use bytemuck::{Pod, Zeroable};
-
-                #[derive(Clone, Copy, Zeroable, Pod)]
-            },
-        }
-    }
-
-    mod fs {
-        vulkano_shaders::shader! {
-            ty: "fragment",
-            src: "
-                #version 450
-                layout(location = 0) in vec3 in_color;
-
-                layout(location = 0) out vec4 f_color;
-    
-                void main() {
-                    f_color = vec4(in_color, 1.0);
-                }
-            "
-        }
-    }
-
-    let vs = vs::load(device.clone()).unwrap();
-    let fs = fs::load(device.clone()).unwrap();
-
-    let uniform_buffer: CpuBufferPool<vs::ty::MVP_Data> =
+    let uniform_buffer: CpuBufferPool<vertex_shader::ty::MvpData> =
         CpuBufferPool::uniform_buffer(memory_allocator.clone());
 
     let render_pass = vulkano::single_pass_renderpass!(device.clone(),
@@ -381,7 +338,7 @@ fn main() {
                     &vec3(0.0, 0.0, 1.0),
                 );
 
-                let uniform_data = vs::ty::MVP_Data {
+                let uniform_data = vertex_shader::ty::MvpData {
                     model: model.into(),
                     view: mvp.view.into(),
                     projection: mvp.projection.into(),
