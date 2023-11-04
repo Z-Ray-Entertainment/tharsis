@@ -21,16 +21,11 @@ use vulkano::descriptor_set::PersistentDescriptorSet;
 use vulkano::descriptor_set::WriteDescriptorSet;
 use vulkano::device::physical::PhysicalDeviceType;
 use vulkano::device::{Device, DeviceCreateInfo, DeviceExtensions, QueueCreateInfo};
-use vulkano::format::Format;
 use vulkano::image::view::ImageView;
-use vulkano::image::AttachmentImage;
 use vulkano::image::{ImageAccess, SwapchainImage};
 use vulkano::instance::{Instance, InstanceCreateInfo};
 use vulkano::memory::allocator::StandardMemoryAllocator;
-use vulkano::pipeline::graphics::depth_stencil::DepthStencilState;
 use vulkano::pipeline::graphics::input_assembly::InputAssemblyState;
-use vulkano::pipeline::graphics::rasterization::CullMode;
-use vulkano::pipeline::graphics::rasterization::RasterizationState;
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::graphics::viewport::{Viewport, ViewportState};
 use vulkano::pipeline::GraphicsPipeline;
@@ -269,17 +264,11 @@ fn main() {
                 store: Store,
                 format: swapchain.image_format(),
                 samples: 1,
-            },
-            depth: {
-                load: Clear,
-                store: DontCare,
-                format: Format::D16_UNORM,
-                samples: 1,
             }
         },
         pass: {
             color: [color],
-            depth_stencil: {depth}
+            depth_stencil: {}
         }
     )
     .unwrap();
@@ -290,9 +279,6 @@ fn main() {
         .input_assembly_state(InputAssemblyState::new())
         .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
         .fragment_shader(fs.entry_point("main").unwrap(), ())
-        //We don't need these two it's a 2D user interface, no 3D and no reason to cull any faces.
-        //.depth_stencil_state(DepthStencilState::simple_depth_test())
-        //.rasterization_state(RasterizationState::new().cull_mode(CullMode::Back))
         .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
         .build(device.clone())
         .unwrap();
@@ -344,7 +330,6 @@ fn main() {
     };
 
     let mut framebuffers = window_size_dependent_setup(
-        &memory_allocator,
         &images,
         render_pass.clone(),
         &mut viewport,
@@ -394,7 +379,6 @@ fn main() {
 
                 swapchain = new_swapchain;
                 framebuffers = window_size_dependent_setup(
-                    &memory_allocator,
                     &new_images,
                     render_pass.clone(),
                     &mut viewport,
@@ -512,17 +496,12 @@ fn main() {
 /// This method is called once during initialization, then again whenever the window is resized
 /// stolen from the vulkano example
 fn window_size_dependent_setup(
-    allocator: &StandardMemoryAllocator,
     images: &[Arc<SwapchainImage>],
     render_pass: Arc<RenderPass>,
     viewport: &mut Viewport,
 ) -> Vec<Arc<Framebuffer>> {
     let dimensions = images[0].dimensions().width_height();
     viewport.dimensions = [dimensions[0] as f32, dimensions[1] as f32];
-    let depth_buffer = ImageView::new_default(
-        AttachmentImage::transient(allocator, dimensions, Format::D16_UNORM).unwrap(),
-    )
-    .unwrap();
 
     images
         .iter()
@@ -531,7 +510,7 @@ fn window_size_dependent_setup(
             Framebuffer::new(
                 render_pass.clone(),
                 FramebufferCreateInfo {
-                    attachments: vec![view, depth_buffer.clone()],
+                    attachments: vec![view],
                     ..Default::default()
                 },
             )
