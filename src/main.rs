@@ -219,7 +219,7 @@ fn main() {
         .build(device.clone())
         .unwrap();
 
-    let rectangle = Rectangle::new();
+    let rectangle = Rectangle::new(0.5, 0.25);
 
     //Buffer with mesh data passed to the GPU to render
     let vertex_buffer = CpuAccessibleBuffer::from_iter(
