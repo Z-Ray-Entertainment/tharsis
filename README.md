@@ -19,3 +19,6 @@ By keepin any window managing out of this project it should also be able to run 
 
 ### openSUSE
 'sudo zypper in cmake ninja vulkan-devel vulkan-tools gcc-c++ fontconfig-devel'
+
+## Compile and run
+'cargo r'
