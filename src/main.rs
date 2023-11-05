@@ -42,6 +42,7 @@ use vulkano::{Version, VulkanLibrary};
 
 use vulkano_win::VkSurfaceBuild;
 
+use winit::dpi::LogicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
@@ -84,6 +85,7 @@ fn main() {
     let surface = WindowBuilder::new()
         .with_title("Tharsis")
         //.with_fullscreen(Some(Fullscreen::Borderless(None)))
+        .with_min_inner_size(LogicalSize::new(320, 240))
         .build_vk_surface(&event_loop, instance.clone())
         .unwrap();
 
