@@ -50,7 +50,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use crate::camera::camera::MVP;
-use crate::camera::camera::calc_perspective;
+use crate::camera::camera::calc_presentation;
 use crate::primitives::primitives::Rectangle;
 use crate::primitives::primitives::Vertex;
 use crate::shaders::shaders::fragment_shader;
@@ -64,6 +64,8 @@ fn main() {
         &vec3(0.0, 1.0, 0.0),
     );
     mvp.model = translate(&identity(), &vec3(0.0, 0.0, -1.0));
+
+    let orthographic : bool = false;
 
     let instance = {
         let library = VulkanLibrary::new().unwrap();
@@ -166,8 +168,7 @@ fn main() {
         let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
         let image_extent: [u32; 2] = window.inner_size().into();
 
-        mvp.projection = calc_perspective(image_extent[0] as f32, image_extent[1] as f32);
-        //mvp.projection = calc_ortho(image_extent[0] as f32, image_extent[1] as f32);
+        mvp.projection = calc_presentation(image_extent[0] as f32, image_extent[1] as f32, orthographic);
 
         Swapchain::new(
             device.clone(),
@@ -277,7 +278,7 @@ fn main() {
                 let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
                 let image_extent: [u32; 2] = window.inner_size().into();
 
-                mvp.projection = calc_perspective(image_extent[0] as f32, image_extent[1] as f32);
+                mvp.projection = calc_presentation(image_extent[0] as f32, image_extent[1] as f32, orthographic);
 
                 let (new_swapchain, new_images) = match swapchain.recreate(SwapchainCreateInfo {
                     image_extent,

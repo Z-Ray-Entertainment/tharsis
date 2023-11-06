@@ -18,16 +18,24 @@ pub mod camera {
         }
     }
 
+    pub fn calc_presentation(width: f32, height: f32, ortho: bool) -> TMat4<f32>{
+        if ortho {
+            return calc_ortho(width, height);
+        } else {
+            return calc_perspective(width, height);
+        }
+    }
+
     fn calc_aspect_ratio(width: f32, height: f32) -> f32{
         return width / height;
     }
 
-    pub fn calc_perspective(width: f32, height: f32) -> TMat4<f32> {
+    fn calc_perspective(width: f32, height: f32) -> TMat4<f32> {
         let aspect = calc_aspect_ratio(width, height);
         return perspective(aspect, half_pi(), 0.01, 100.0);
     }
 
-    pub fn calc_ortho(width: f32, height: f32) -> TMat4<f32> {
-        return ortho(0.0, width, 0.0, height, 0.01, 100.0);
+    fn calc_ortho(width: f32, height: f32) -> TMat4<f32> {
+        return ortho(0.0, width, height, 0.0, 1.0, 100.0);
     }
 }
