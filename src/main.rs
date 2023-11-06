@@ -1,11 +1,10 @@
 pub mod primitives;
 pub mod shaders;
+pub mod camera;
 
 use nalgebra_glm::TMat4;
-use nalgebra_glm::half_pi;
 use nalgebra_glm::identity;
 use nalgebra_glm::look_at;
-use nalgebra_glm::perspective;
 use nalgebra_glm::pi;
 use nalgebra_glm::rotate_normalized_axis;
 use nalgebra_glm::translate;
@@ -50,9 +49,10 @@ use winit::window::{Window, WindowBuilder};
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::camera::camera::MVP;
+use crate::camera::camera::calc_perspective;
 use crate::primitives::primitives::Rectangle;
 use crate::primitives::primitives::Vertex;
-use crate::shaders::shaders::MVP;
 use crate::shaders::shaders::fragment_shader;
 use crate::shaders::shaders::vertex_shader;
 
@@ -166,8 +166,8 @@ fn main() {
         let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
         let image_extent: [u32; 2] = window.inner_size().into();
 
-        let aspect_ratio = image_extent[0] as f32 / image_extent[1] as f32;
-        mvp.projection = perspective(aspect_ratio, half_pi(), 0.01, 100.0);
+        mvp.projection = calc_perspective(image_extent[0] as f32, image_extent[1] as f32);
+        //mvp.projection = calc_ortho(image_extent[0] as f32, image_extent[1] as f32);
 
         Swapchain::new(
             device.clone(),
@@ -277,8 +277,7 @@ fn main() {
                 let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
                 let image_extent: [u32; 2] = window.inner_size().into();
 
-                let aspect_ratio = image_extent[0] as f32 / image_extent[1] as f32;
-                mvp.projection = perspective(aspect_ratio, half_pi(), 0.01, 100.0);
+                mvp.projection = calc_perspective(image_extent[0] as f32, image_extent[1] as f32);
 
                 let (new_swapchain, new_images) = match swapchain.recreate(SwapchainCreateInfo {
                     image_extent,
