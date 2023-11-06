@@ -27,7 +27,11 @@ pub mod camera {
     }
 
     fn calc_aspect_ratio(width: f32, height: f32) -> f32{
-        return width / height;
+        if height <= 0.0 {
+            return width / 1.0;
+        } else {
+            return width / height;
+        }
     }
 
     fn calc_perspective(width: f32, height: f32) -> TMat4<f32> {
